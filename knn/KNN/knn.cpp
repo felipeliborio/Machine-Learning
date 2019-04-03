@@ -31,27 +31,26 @@ std::string FKNN::_getClassificationOutput(std::vector<std::pair<double, int>> &
 {
 	std::string output;
 
-	std::vector<std::pair<double, int>> votes;
+	std::map<std::string, double> votes;
 
-	bool voted;
-	for (auto & e : distanceVec) {
-		voted = false;
-		double vote = 1.0 / distanceVec.size();
-		if (weighted) { vote *= 1.0 / e.first; }//this doesn't seem to be good enough
-		for (int i = 0; i < votes.size(); i++) {
-			if (votes[i].second == e.second) {
-				votes[i].first += vote;
-				voted = true;
-				break;
-			}
+	for (auto neighbor : kNeighbors) {
+		if (votes.find(_trainingSet[neighbor.second][_trainingSet[neighbor.second].size() - 1]) == votes.end()) {
+			votes[_trainingSet[neighbor.second][_trainingSet[neighbor.second].size() - 1]] = 0;
 		}
-		if (!voted) {
-			votes.push_back(std::make_pair(vote, e.second));
+		double vote = 1.0 / kNeighbors.size();
+		if (weighted) { vote *= 1.0 / neighbor.first; }
+		votes[_trainingSet[neighbor.second][_trainingSet[neighbor.second].size() - 1]] += vote;
+	}
+
+	output = (*votes.begin()).first;
+	double voteCount = (*votes.begin()).second;
+	for (auto & candidate : votes) {
+		if (candidate.second > voteCount) {
+			output = candidate.first;
+			voteCount = candidate.second;
 		}
 	}
-	std::sort(votes.begin(), votes.end());
-	auto aux = votes[votes.size() - 1].second;
-	output = _trainingSet[aux][_trainingSet[aux].size() - 1];
+
 	return output;
 }
 
